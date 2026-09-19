@@ -1,0 +1,11 @@
+{
+  "bed_width_mm": 1500,
+  "bed_height_mm": 3000,
+  "pixel_per_mm_x": 0.5,
+  "pixel_per_mm_y": 0.5,
+  "image_width_px": 3000,
+  "image_height_px": 6000,
+  "homography": null,
+  "bed_corners_px": null,
+  "notes": "Default calibration. Run camera calibration procedure to replace with real values."
+}
