@@ -1,0 +1,244 @@
+/* ==========================================================================
+   Dynamic animated sky backgrounds — pure CSS, driven by data-sky / data-time
+   attributes on <body> set from JS based on live weather conditions.
+   ========================================================================== */
+
+.sky {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  transition: background var(--dur-slow) var(--ease-out);
+  background: linear-gradient(160deg, #6db3ff 0%, #a7d4ff 55%, #dff0ff 100%);
+}
+
+:root[data-theme='dark'] .sky {
+  background: linear-gradient(160deg, #0a1330 0%, #131c3d 60%, #1c2750 100%);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .sky {
+    background: linear-gradient(160deg, #0a1330 0%, #131c3d 60%, #1c2750 100%);
+  }
+}
+
+/* time-of-day + condition combinations */
+body[data-time='day'][data-sky='clear'] .sky { background: linear-gradient(160deg, #4d9cff 0%, #7ec3ff 45%, #cfeaff 100%); }
+body[data-time='night'][data-sky='clear'] .sky { background: linear-gradient(160deg, #050915 0%, #0c1738 55%, #16224a 100%); }
+body[data-time='day'][data-sky='clouds'] .sky { background: linear-gradient(160deg, #8fa3bd 0%, #b7c6da 55%, #dfe6f0 100%); }
+body[data-time='night'][data-sky='clouds'] .sky { background: linear-gradient(160deg, #0d1220 0%, #1a2436 60%, #29344a 100%); }
+body[data-time='day'][data-sky='rain'] .sky { background: linear-gradient(160deg, #46586e 0%, #5b7086 55%, #8093a8 100%); }
+body[data-time='night'][data-sky='rain'] .sky { background: linear-gradient(160deg, #060a14 0%, #101a2c 60%, #1a2438 100%); }
+body[data-time='day'][data-sky='thunderstorm'] .sky { background: linear-gradient(160deg, #232a3d 0%, #38415c 55%, #545f7d 100%); }
+body[data-time='night'][data-sky='thunderstorm'] .sky { background: linear-gradient(160deg, #04060c 0%, #0d1220 60%, #171d30 100%); }
+body[data-time='day'][data-sky='snow'] .sky { background: linear-gradient(160deg, #aebdd6 0%, #d7e2f0 55%, #f3f7fc 100%); }
+body[data-time='night'][data-sky='snow'] .sky { background: linear-gradient(160deg, #131a2c 0%, #232f4a 60%, #354467 100%); }
+body[data-time='day'][data-sky='mist'] .sky { background: linear-gradient(160deg, #9fb0bd 0%, #c4d0d8 55%, #e6edf0 100%); }
+body[data-time='night'][data-sky='mist'] .sky { background: linear-gradient(160deg, #0b0f16 0%, #1a222c 60%, #2a3440 100%); }
+
+.sky__layer {
+  position: absolute;
+  inset: 0;
+}
+
+/* -------------------- Sun -------------------- */
+.sky__sun {
+  position: absolute;
+  top: 8%;
+  right: 12%;
+  width: min(28vw, 240px);
+  height: min(28vw, 240px);
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 35%, #fff9e0 0%, #ffd76a 38%, rgba(255, 183, 74, 0) 72%);
+  filter: blur(0.5px);
+  opacity: 0;
+  transform: scale(0.85);
+  transition: opacity var(--dur-slow) var(--ease-out), transform var(--dur-slow) var(--ease-out);
+  animation: sun-pulse 8s ease-in-out infinite;
+}
+body[data-time='day'][data-sky='clear'] .sky__sun,
+body[data-time='day'][data-sky='clouds'] .sky__sun { opacity: 1; transform: scale(1); }
+
+@keyframes sun-pulse {
+  0%, 100% { filter: brightness(1) blur(0.5px); }
+  50% { filter: brightness(1.08) blur(0px); }
+}
+
+/* -------------------- Moon + stars -------------------- */
+.sky__moon {
+  position: absolute;
+  top: 10%;
+  right: 14%;
+  width: min(16vw, 130px);
+  height: min(16vw, 130px);
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 32%, #fdfdfe 0%, #d9e2f5 55%, rgba(217, 226, 245, 0) 75%);
+  box-shadow: 0 0 60px 10px rgba(180, 200, 255, 0.25);
+  opacity: 0;
+  transform: scale(0.85);
+  transition: opacity var(--dur-slow) var(--ease-out), transform var(--dur-slow) var(--ease-out);
+}
+body[data-time='night'] .sky__moon { opacity: 1; transform: scale(1); }
+
+.sky__stars {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity var(--dur-slow) var(--ease-out);
+  background-image:
+    radial-gradient(1.5px 1.5px at 10% 20%, #fff, transparent),
+    radial-gradient(1.5px 1.5px at 25% 45%, #fff, transparent),
+    radial-gradient(1px 1px at 40% 12%, #fff, transparent),
+    radial-gradient(1.5px 1.5px at 60% 30%, #fff, transparent),
+    radial-gradient(1px 1px at 75% 55%, #fff, transparent),
+    radial-gradient(1.5px 1.5px at 85% 15%, #fff, transparent),
+    radial-gradient(1px 1px at 92% 40%, #fff, transparent),
+    radial-gradient(1.5px 1.5px at 15% 65%, #fff, transparent),
+    radial-gradient(1px 1px at 50% 70%, #fff, transparent),
+    radial-gradient(1.5px 1.5px at 33% 85%, #fff, transparent);
+  background-repeat: no-repeat;
+  animation: twinkle 4s ease-in-out infinite;
+}
+body[data-time='night'] .sky__stars { opacity: 1; }
+
+@keyframes twinkle {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
+}
+
+/* -------------------- Clouds -------------------- */
+.sky__clouds {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity var(--dur-slow) var(--ease-out);
+}
+body[data-sky='clouds'] .sky__clouds,
+body[data-sky='rain'] .sky__clouds,
+body[data-sky='thunderstorm'] .sky__clouds,
+body[data-sky='snow'] .sky__clouds { opacity: 1; }
+body[data-sky='clear'] .sky__clouds { opacity: 0.35; }
+
+.cloud {
+  position: absolute;
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: 100px;
+  filter: blur(1px);
+}
+:root[data-theme='dark'] .cloud { background: rgba(180, 190, 220, 0.18); }
+
+.cloud::before, .cloud::after {
+  content: '';
+  position: absolute;
+  background: inherit;
+  border-radius: 50%;
+}
+
+.cloud--1 { width: 180px; height: 56px; top: 18%; left: -10%; animation: drift 60s linear infinite; opacity: 0.9; }
+.cloud--1::before { width: 90px; height: 90px; top: -46px; left: 20px; }
+.cloud--1::after { width: 70px; height: 70px; top: -34px; left: 90px; }
+
+.cloud--2 { width: 130px; height: 42px; top: 32%; left: -20%; animation: drift 80s linear infinite; animation-delay: -20s; opacity: 0.75; }
+.cloud--2::before { width: 64px; height: 64px; top: -32px; left: 16px; }
+.cloud--2::after { width: 50px; height: 50px; top: -24px; left: 62px; }
+
+.cloud--3 { width: 220px; height: 64px; top: 8%; left: -30%; animation: drift 100s linear infinite; animation-delay: -50s; opacity: 0.6; }
+.cloud--3::before { width: 100px; height: 100px; top: -52px; left: 30px; }
+.cloud--3::after { width: 80px; height: 80px; top: -38px; left: 120px; }
+
+@keyframes drift {
+  from { transform: translateX(0); }
+  to { transform: translateX(140vw); }
+}
+
+/* -------------------- Rain -------------------- */
+.sky__rain {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity var(--dur-med) var(--ease-out);
+  pointer-events: none;
+}
+body[data-sky='rain'] .sky__rain,
+body[data-sky='thunderstorm'] .sky__rain { opacity: 1; }
+
+.raindrop {
+  position: absolute;
+  top: -10%;
+  width: 1.5px;
+  height: 70px;
+  background: linear-gradient(to bottom, rgba(200, 220, 255, 0), rgba(200, 220, 255, 0.55));
+  animation: fall linear infinite;
+}
+@keyframes fall {
+  to { transform: translateY(120vh); }
+}
+
+/* -------------------- Snow -------------------- */
+.sky__snow {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity var(--dur-med) var(--ease-out);
+  pointer-events: none;
+}
+body[data-sky='snow'] .sky__snow { opacity: 1; }
+
+.snowflake {
+  position: absolute;
+  top: -5%;
+  border-radius: 50%;
+  background: #fff;
+  animation: snow-fall linear infinite, snow-sway ease-in-out infinite;
+}
+@keyframes snow-fall {
+  to { transform: translateY(110vh); }
+}
+@keyframes snow-sway {
+  0%, 100% { margin-left: 0; }
+  50% { margin-left: 30px; }
+}
+
+/* -------------------- Lightning -------------------- */
+.sky__lightning {
+  position: absolute;
+  inset: 0;
+  background: #fff;
+  opacity: 0;
+  pointer-events: none;
+}
+body[data-sky='thunderstorm'] .sky__lightning {
+  animation: lightning-strike 7s ease-in-out infinite;
+}
+@keyframes lightning-strike {
+  0%, 93%, 100% { opacity: 0; }
+  94% { opacity: 0.55; }
+  94.5% { opacity: 0.05; }
+  95% { opacity: 0.4; }
+  95.5% { opacity: 0; }
+}
+
+/* -------------------- Mist -------------------- */
+.sky__mist {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  background:
+    linear-gradient(to top, rgba(255,255,255,0.5), transparent 40%),
+    repeating-linear-gradient(100deg, rgba(255,255,255,0.12) 0 40px, transparent 40px 90px);
+  transition: opacity var(--dur-med) var(--ease-out);
+  animation: mist-drift 30s ease-in-out infinite;
+}
+body[data-sky='mist'] .sky__mist { opacity: 1; }
+@keyframes mist-drift {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(3%); }
+}
+
+/* -------------------- Aurora accent (subtle, all conditions) -------------------- */
+.sky__glow {
+  position: absolute;
+  inset: -10%;
+  background: radial-gradient(50% 40% at 30% 100%, rgba(124, 77, 255, 0.18), transparent),
+              radial-gradient(40% 30% at 80% 90%, rgba(79, 107, 255, 0.16), transparent);
+  mix-blend-mode: screen;
+}
