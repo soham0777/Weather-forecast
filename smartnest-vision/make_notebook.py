@@ -27,10 +27,14 @@ md("""
 instead of "looks right". Measured on those scenes: sheet area within about 0.05 %, circle diameters within 0.6 mm,
 median edge error 0.1 mm at 1.8 mm/px. **These numbers are from simulation - validate on real Bansali machine
 images before trusting the vision stage in production.**
+
+**Where to run:** Google Colab (colab.research.google.com -> File -> Upload notebook -> Runtime -> Run all) supports
+everything, including the live webcam and click-the-corners widgets. VS Code / local Jupyter (pick a Python 3.10+
+kernel) runs the full pipeline in `demo` mode and with your own images; the webcam and click widgets are Colab-only.
 """)
 code("""
 #@title Step 0 - install (about 30 s)
-!pip install -q "shapely>=2.1" ezdxf opencv-python
+%pip install -q "shapely>=2.1" ezdxf opencv-python matplotlib
 """)
 for m in MODULES:
     with open(m) as f:
