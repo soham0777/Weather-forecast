@@ -63,22 +63,46 @@ CAPTURE_MODE = 'demo'  # @param ['webcam', 'upload', 'demo']
 DEMO_SCENE = 'mixed_holes'  # @param ['fresh_sheet', 'four_circles', 'mixed_holes', 'irregular_remnant', 'dark_steel', 'lens_distortion', 'small_bed']
 BED_WIDTH_MM = 1500   # @param {type:"number"}
 BED_HEIGHT_MM = 950   # @param {type:"number"}
-
 CAMERA_NAME = ''  # @param {type:"string"}
-# Part of the overhead webcam's name, e.g. 'C920' or 'USB'. Empty = the picker preselects a camera
-# that is not the laptop's built-in one. You can always switch cameras in the drop-down.
+# Leave CAMERA_NAME empty: the external webcam is chosen automatically (and remembered).
+# Only type part of a name (e.g. 'LAPCARE') if the automatic choice is ever wrong.
+
+import os, base64, cv2, numpy as np
+try:
+    from google.colab.output import eval_js
+    from google.colab import files
+    IN_COLAB = True
+except ImportError:
+    IN_COLAB = False
+try:
+    import smartnest_vision as sv, smartnest_synthetic as ss
+except ImportError:
+    raise SystemExit('The SmartNest modules are not in this runtime yet. Use Runtime -> Run all '
+                     '(or run every cell above this one once), then run this cell again.')
+if 'show' not in globals():
+    import matplotlib.pyplot as plt
+    def show(img, title='', w=15):
+        plt.figure(figsize=(w, w * img.shape[0] / img.shape[1]))
+        plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB)); plt.title(title); plt.axis('off'); plt.show()
+
+CAMERA_MEMORY = 'smartnest_camera.txt'
 
 def capture_from_browser_webcam(camera_name='', quality=0.92):
-    # Live preview with a camera picker. Browsers open the DEFAULT camera (usually the laptop's
-    # built-in one) unless a device is chosen explicitly, so every camera is listed here.
-    want = ''.join(ch for ch in camera_name if ch.isalnum() or ch in ' -_.()')
+    # Browsers open the DEFAULT camera (the laptop's own) unless a device is chosen explicitly.
+    # Choice order: CAMERA_NAME > camera used last time > known external webcam brand >
+    # the most recently connected camera that does not look built-in.
+    if not camera_name and os.path.exists(CAMERA_MEMORY):
+        camera_name = open(CAMERA_MEMORY).read().split(' (')[0]
+    want = ''.join(ch for ch in camera_name if ch.isalnum() or ch in ' -_.')
     js = '''
     (async () => {
-      const WANT = 'CAMNAME'.toLowerCase();
+      const WANT = 'CAMNAME'.toLowerCase().trim();
+      const builtIn = /integrated|built-?in|internal|facetime|front|truevision|easycamera|hd webcam|uvc webcam|ir camera|infrared|hello|virtual/i;
+      const external = /lapcare|logitech|c9[0-9][0-9]|c270|c310|c505|c615|brio|lifecam|razer|elgato|zebronics|frontech|iball|a4tech|quantum|creative|usb camera|usb video|external/i;
       const box = document.createElement('div');
       box.style.cssText = 'background:#0f172a;padding:16px;border-radius:10px;border:2px solid #00e5ff;max-width:760px;color:#f8fafc;font-family:monospace';
       box.innerHTML = '<h3 style="margin:0 0 8px;color:#00e5ff">LIVE OVERHEAD CAMERA</h3>' +
-        '<p style="margin:0 0 10px;color:#94a3b8">1. Choose the overhead camera. 2. Check all 4 bed corners (or the markers) are visible. 3. Capture.</p>';
+        '<p style="margin:0 0 10px;color:#94a3b8">Check that all 4 bed corners (or the markers) are visible, then capture. Wrong camera? Pick another below.</p>';
       const sel = document.createElement('select');
       sel.style.cssText = 'width:100%;padding:8px;font-size:14px;margin-bottom:8px;background:#1e293b;color:#f8fafc;border:1px solid #00e5ff;border-radius:6px';
       const video = document.createElement('video'); video.style.width = '100%'; video.setAttribute('playsinline', ''); video.muted = true;
@@ -86,18 +110,24 @@ def capture_from_browser_webcam(camera_name='', quality=0.92):
       const btn = document.createElement('button'); btn.textContent = 'CAPTURE BED IMAGE';
       btn.style.cssText = 'margin-top:6px;background:#00e5ff;border:0;padding:10px 20px;font-weight:bold;border-radius:6px;cursor:pointer';
       box.append(sel, video, info, btn); document.body.appendChild(box);
-      // camera names are only readable after camera permission has been granted once
-      const probe = await navigator.mediaDevices.getUserMedia({video: true});
-      probe.getTracks().forEach(t => t.stop());
-      const cams = (await navigator.mediaDevices.enumerateDevices()).filter(d => d.kind === 'videoinput');
-      cams.forEach((c, i) => { const o = document.createElement('option'); o.value = c.deviceId;
-        o.text = c.label || ('Camera ' + (i + 1)); sel.appendChild(o); });
-      const builtIn = /integrated|built-?in|internal|facetime|front|user facing/i;
+      const videoInputs = async () => (await navigator.mediaDevices.enumerateDevices()).filter(d => d.kind === 'videoinput');
+      let cams = await videoInputs();
+      if (!cams.some(c => c.label)) {          // names are hidden until camera permission is granted (first run only)
+        info.textContent = 'Allow camera access in the browser prompt...';
+        const probe = await navigator.mediaDevices.getUserMedia({video: true});
+        probe.getTracks().forEach(t => t.stop());
+        cams = await videoInputs();
+      }
+      const fill = list => { sel.innerHTML = ''; list.forEach((c, i) => { const o = document.createElement('option');
+        o.value = c.deviceId; o.text = c.label || ('Camera ' + (i + 1)); sel.appendChild(o); }); };
+      fill(cams);
+      // +2 known external webcam, -1 sounds built-in; ties go to the most recently connected camera
+      const score = c => (external.test(c.label) ? 2 : 0) - (builtIn.test(c.label) ? 1 : 0);
+      const best = list => list.reduce((a, c) => (score(c) >= score(a) ? c : a));
       let saved = null; try { saved = localStorage.getItem('smartnest_camera'); } catch (e) {}
       const pick = (WANT && cams.find(c => c.label.toLowerCase().includes(WANT)))
                 || cams.find(c => c.deviceId === saved)
-                || (cams.length > 1 && cams.find(c => !builtIn.test(c.label)))
-                || cams[cams.length - 1];
+                || best(cams);
       sel.value = pick.deviceId;
       let stream = null;
       async function start(id) {
@@ -107,21 +137,38 @@ def capture_from_browser_webcam(camera_name='', quality=0.92):
         const s = await navigator.mediaDevices.getUserMedia({video: {deviceId: {exact: id}, width: {ideal: 1920}, height: {ideal: 1080}}});
         video.srcObject = s; await video.play(); stream = s;
         try { localStorage.setItem('smartnest_camera', id); } catch (e) {}
-        info.textContent = 'Using: ' + sel.options[sel.selectedIndex].text + '  (' + video.videoWidth + ' x ' + video.videoHeight + ' px)';
+        const n = sel.options.length;
+        info.textContent = 'Using: ' + sel.options[sel.selectedIndex].text + '  (' + video.videoWidth + ' x ' + video.videoHeight + ' px)' +
+          (n === 1 ? '  - only ONE camera found: if the external webcam is plugged in, re-plug it (it switches automatically)' : '  - ' + n + ' cameras found');
         btn.disabled = false; btn.style.opacity = 1;
       }
-      const fail = e => { info.textContent = 'Cannot open this camera (' + e.message + '). Close other apps using it or pick another.'; };
+      const fail = e => { info.textContent = 'Cannot open this camera (' + e.message + '). Close other apps using it (Camera, Teams, WhatsApp) or pick another.'; };
       sel.onchange = () => start(sel.value).catch(fail);
+      navigator.mediaDevices.ondevicechange = async () => {  // webcam plugged in / unplugged while the preview is open
+        const before = new Set([...sel.options].map(o => o.value));
+        const curId = stream ? stream.getVideoTracks()[0].getSettings().deviceId : sel.value;
+        const now = await videoInputs();
+        if (!now.length) { info.textContent = 'No camera connected.'; return; }
+        fill(now);
+        const cur = now.find(c => c.deviceId === curId);
+        const added = now.filter(c => !before.has(c.deviceId));
+        const cand = added.length ? best(added) : null;
+        if (cand && (!cur || score(cand) >= score(cur))) { sel.value = cand.deviceId; start(cand.deviceId).catch(fail); }
+        else if (!cur) { sel.value = best(now).deviceId; start(sel.value).catch(fail); }
+        else { sel.value = cur.deviceId; }
+      };
       await start(sel.value).catch(fail);
       return new Promise(res => { btn.onclick = () => {
         if (!stream || !video.videoWidth) { info.textContent = 'No live picture yet - pick a working camera.'; return; }
         const c = document.createElement('canvas'); c.width = video.videoWidth; c.height = video.videoHeight;
         c.getContext('2d').drawImage(video, 0, 0);
         const label = sel.options[sel.selectedIndex].text;
+        navigator.mediaDevices.ondevicechange = null;
         stream.getTracks().forEach(t => t.stop()); box.remove();
         res({image: c.toDataURL('image/jpeg', QUALITY), label: label, width: c.width, height: c.height}); }; });
     })()'''.replace('QUALITY', str(quality)).replace('CAMNAME', want)
     r = eval_js(js)
+    open(CAMERA_MEMORY, 'w').write(r['label'])
     print(f"Captured from: {r['label']}  ({r['width']} x {r['height']} px)")
     return cv2.imdecode(np.frombuffer(base64.b64decode(r['image'].split(',')[1]), np.uint8), cv2.IMREAD_COLOR)
 
@@ -131,6 +178,8 @@ if CAPTURE_MODE == 'webcam' and IN_COLAB:
 elif CAPTURE_MODE == 'upload' and IN_COLAB:
     up = files.upload(); raw_image = cv2.imread(list(up)[0])
 else:
+    if CAPTURE_MODE != 'demo':
+        print(f"'{CAPTURE_MODE}' needs Google Colab - using the demo scene instead.")
     scene = ss.make_scene(DEMO_SCENE)
     raw_image = scene.image
     BED_WIDTH_MM, BED_HEIGHT_MM = scene.bed_w, scene.bed_h
