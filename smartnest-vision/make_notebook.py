@@ -64,29 +64,70 @@ DEMO_SCENE = 'mixed_holes'  # @param ['fresh_sheet', 'four_circles', 'mixed_hole
 BED_WIDTH_MM = 1500   # @param {type:"number"}
 BED_HEIGHT_MM = 950   # @param {type:"number"}
 
-def capture_from_browser_webcam(quality=0.92):
+CAMERA_NAME = ''  # @param {type:"string"}
+# Part of the overhead webcam's name, e.g. 'C920' or 'USB'. Empty = the picker preselects a camera
+# that is not the laptop's built-in one. You can always switch cameras in the drop-down.
+
+def capture_from_browser_webcam(camera_name='', quality=0.92):
+    # Live preview with a camera picker. Browsers open the DEFAULT camera (usually the laptop's
+    # built-in one) unless a device is chosen explicitly, so every camera is listed here.
+    want = ''.join(ch for ch in camera_name if ch.isalnum() or ch in ' -_.()')
     js = '''
     (async () => {
+      const WANT = 'CAMNAME'.toLowerCase();
       const box = document.createElement('div');
       box.style.cssText = 'background:#0f172a;padding:16px;border-radius:10px;border:2px solid #00e5ff;max-width:760px;color:#f8fafc;font-family:monospace';
-      box.innerHTML = '<h3 style="margin:0 0 8px;color:#00e5ff">LIVE OVERHEAD CAMERA</h3><p style="margin:0 0 10px;color:#94a3b8">All 4 bed corners (or the markers) must be visible.</p>';
-      const video = document.createElement('video'); video.style.width = '100%'; video.setAttribute('playsinline', '');
+      box.innerHTML = '<h3 style="margin:0 0 8px;color:#00e5ff">LIVE OVERHEAD CAMERA</h3>' +
+        '<p style="margin:0 0 10px;color:#94a3b8">1. Choose the overhead camera. 2. Check all 4 bed corners (or the markers) are visible. 3. Capture.</p>';
+      const sel = document.createElement('select');
+      sel.style.cssText = 'width:100%;padding:8px;font-size:14px;margin-bottom:8px;background:#1e293b;color:#f8fafc;border:1px solid #00e5ff;border-radius:6px';
+      const video = document.createElement('video'); video.style.width = '100%'; video.setAttribute('playsinline', ''); video.muted = true;
+      const info = document.createElement('div'); info.style.cssText = 'color:#f59e0b;margin:6px 0';
       const btn = document.createElement('button'); btn.textContent = 'CAPTURE BED IMAGE';
-      btn.style.cssText = 'margin-top:10px;background:#00e5ff;border:0;padding:10px 20px;font-weight:bold;border-radius:6px;cursor:pointer';
-      box.appendChild(video); box.appendChild(btn); document.body.appendChild(box);
-      const stream = await navigator.mediaDevices.getUserMedia({video: {width: {ideal: 1920}, height: {ideal: 1080}}});
-      video.srcObject = stream; await video.play();
+      btn.style.cssText = 'margin-top:6px;background:#00e5ff;border:0;padding:10px 20px;font-weight:bold;border-radius:6px;cursor:pointer';
+      box.append(sel, video, info, btn); document.body.appendChild(box);
+      // camera names are only readable after camera permission has been granted once
+      const probe = await navigator.mediaDevices.getUserMedia({video: true});
+      probe.getTracks().forEach(t => t.stop());
+      const cams = (await navigator.mediaDevices.enumerateDevices()).filter(d => d.kind === 'videoinput');
+      cams.forEach((c, i) => { const o = document.createElement('option'); o.value = c.deviceId;
+        o.text = c.label || ('Camera ' + (i + 1)); sel.appendChild(o); });
+      const builtIn = /integrated|built-?in|internal|facetime|front|user facing/i;
+      let saved = null; try { saved = localStorage.getItem('smartnest_camera'); } catch (e) {}
+      const pick = (WANT && cams.find(c => c.label.toLowerCase().includes(WANT)))
+                || cams.find(c => c.deviceId === saved)
+                || (cams.length > 1 && cams.find(c => !builtIn.test(c.label)))
+                || cams[cams.length - 1];
+      sel.value = pick.deviceId;
+      let stream = null;
+      async function start(id) {
+        btn.disabled = true; btn.style.opacity = 0.4; info.textContent = 'Opening camera...';
+        if (stream) stream.getTracks().forEach(t => t.stop());
+        stream = null;
+        const s = await navigator.mediaDevices.getUserMedia({video: {deviceId: {exact: id}, width: {ideal: 1920}, height: {ideal: 1080}}});
+        video.srcObject = s; await video.play(); stream = s;
+        try { localStorage.setItem('smartnest_camera', id); } catch (e) {}
+        info.textContent = 'Using: ' + sel.options[sel.selectedIndex].text + '  (' + video.videoWidth + ' x ' + video.videoHeight + ' px)';
+        btn.disabled = false; btn.style.opacity = 1;
+      }
+      const fail = e => { info.textContent = 'Cannot open this camera (' + e.message + '). Close other apps using it or pick another.'; };
+      sel.onchange = () => start(sel.value).catch(fail);
+      await start(sel.value).catch(fail);
       return new Promise(res => { btn.onclick = () => {
+        if (!stream || !video.videoWidth) { info.textContent = 'No live picture yet - pick a working camera.'; return; }
         const c = document.createElement('canvas'); c.width = video.videoWidth; c.height = video.videoHeight;
-        c.getContext('2d').drawImage(video, 0, 0); stream.getTracks().forEach(t => t.stop()); box.remove();
-        res(c.toDataURL('image/jpeg', QUALITY)); }; });
-    })()'''.replace('QUALITY', str(quality))
-    data = eval_js(js)
-    return cv2.imdecode(np.frombuffer(base64.b64decode(data.split(',')[1]), np.uint8), cv2.IMREAD_COLOR)
+        c.getContext('2d').drawImage(video, 0, 0);
+        const label = sel.options[sel.selectedIndex].text;
+        stream.getTracks().forEach(t => t.stop()); box.remove();
+        res({image: c.toDataURL('image/jpeg', QUALITY), label: label, width: c.width, height: c.height}); }; });
+    })()'''.replace('QUALITY', str(quality)).replace('CAMNAME', want)
+    r = eval_js(js)
+    print(f"Captured from: {r['label']}  ({r['width']} x {r['height']} px)")
+    return cv2.imdecode(np.frombuffer(base64.b64decode(r['image'].split(',')[1]), np.uint8), cv2.IMREAD_COLOR)
 
 scene = None
 if CAPTURE_MODE == 'webcam' and IN_COLAB:
-    raw_image = capture_from_browser_webcam()
+    raw_image = capture_from_browser_webcam(CAMERA_NAME)
 elif CAPTURE_MODE == 'upload' and IN_COLAB:
     up = files.upload(); raw_image = cv2.imread(list(up)[0])
 else:
