@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+venv/
+.venv/
+.pytest_cache/
+
+# SQLite database - recreate any time with: python seed.py
+*.db
+*.db-journal
+*.sqlite3
+
+# Environment files (never commit secrets)
+.env
+.env.*
+!.env.example
+
+# Node / Vite
+node_modules/
+dist/
+
+# Logs, OS and editor files
+*.log
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

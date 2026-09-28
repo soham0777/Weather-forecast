@@ -44,6 +44,12 @@ Weather-forecast/
 └── script.js    # API call and rendering
 ```
 
+## 🏦 Also in this repository
+
+**[Bank Web Services Platform](bank-web-services/README.md)** — an educational SOAP + REST integration simulator
+(FastAPI + React) for the fictional *National Digital Bank*. It lives in its own folder, `bank-web-services/`, and is
+independent of the weather app.
+
 ---
 
 <div align="center">Made with ❤️ by <a href="https://github.com/soham0777">Soham Kadu</a></div>
