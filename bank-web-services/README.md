@@ -209,10 +209,34 @@ Optional: copy `frontend/.env.example` to `frontend/.env` if the backend is not 
 | SOAP endpoint / WSDL | http://localhost:8000/soap · http://localhost:8000/soap?wsdl |
 | Health | http://localhost:8000/health |
 
-**One-command start (Windows):** double-click **`start_all.bat`** — it opens the backend and frontend in two windows
-(creating the venv, installing dependencies and seeding on first run) and then opens the browser.
+**One-command start (Windows):** double-click **`start_all.bat`**. It checks that Python and Node.js are installed,
+opens the backend and the frontend in two windows (creating the venv, installing dependencies and seeding on the
+first run), **waits until both servers answer**, and then opens the browser. The first run needs internet access and
+can take a few minutes; later starts take seconds. Keep the two server windows open while you use the simulator.
 Or run `start_backend.bat` and `start_frontend.bat` separately. On macOS/Linux: `./start_backend.sh` and
 `./start_frontend.sh` in two terminals.
+
+### Troubleshooting
+
+| Symptom | Cause and fix |
+|---|---|
+| Browser: *"localhost refused to connect"* / `ERR_CONNECTION_REFUSED` on `localhost:5173` | The frontend server is not running **on your computer**. Start it (`start_all.bat`, or `npm run dev` in `frontend/`) and keep its window open. On the first run wait until the window shows `Local: http://localhost:5173/`. |
+| The UI loads but the header says **Backend Offline** | The backend is not running. Start `start_backend.bat` (or `uvicorn app.main:app --reload --port 8000` in `backend/`) and keep its window open. |
+| `'python' is not recognized` | Install Python 3.10+ from python.org and tick **"Add python.exe to PATH"**. |
+| `'npm' is not recognized` or a Vite *"Node.js version"* error | Install the Node.js **LTS** version (20.19+ or 22.12+) from nodejs.org, then open a new terminal. |
+| `Port 5173 is already in use` / `address already in use` (8000) | Another copy is already running — close the old windows, or stop the other program using that port. |
+| `bank-web-services` folder is missing | You downloaded the default branch. Get the branch that contains this project (see below). |
+
+**Getting the code:** this project is on the branch `claude/gracious-darwin-infyvg`:
+
+```bash
+git clone -b claude/gracious-darwin-infyvg https://github.com/soham0777/Weather-forecast.git
+cd Weather-forecast/bank-web-services
+```
+
+or download the ZIP from
+`https://github.com/soham0777/Weather-forecast/archive/refs/heads/claude/gracious-darwin-infyvg.zip`
+(once the branch is merged into `main`, the normal *Code → Download ZIP* works too).
 
 **Demo data:** Demo Account `1234567890` · Demo Beneficiary `9876543210` — *Demo Data Only.*
 
