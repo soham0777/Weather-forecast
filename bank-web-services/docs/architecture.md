@@ -239,5 +239,5 @@ Spyne's latest release (2.14.0) fails to import on Python 3.12 and 3.13
 (`ModuleNotFoundError: No module named 'spyne.util.six.moves'` — verified while building this project), and
 students on Windows usually install a recent Python. The SOAP endpoint is therefore implemented directly with
 **lxml**: about 275 readable lines (plus the WSDL), it shows every step of SOAP processing (envelope parsing, operation dispatch,
-Faults, WSDL), runs on Python 3.10–3.13, and is verified for interoperability with **zeep**, an independent SOAP
+Faults, WSDL), runs on Python 3.10–3.14, and is verified for interoperability with **zeep**, an independent SOAP
 client library that generates its client from our WSDL (`tests/test_soap.py::test_zeep_soap_client_interoperability`).

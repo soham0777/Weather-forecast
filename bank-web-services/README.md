@@ -156,7 +156,10 @@ SQLite file `backend/bank.db` (created automatically). Tables: `accounts`, `tran
 
 ## 9. Installation
 
-**Prerequisites:** Python **3.10+** (tested on 3.10, 3.11, 3.12, 3.13) and Node.js **20.19+** (or 22.12+).
+**Prerequisites:** Python **3.10+** (tested on 3.10, 3.11, 3.12, 3.13, 3.14) and Node.js **20.19+** (or 22.12+).
+
+> Run every command **from inside the project folder** (`bank-web-services\backend` or `bank-web-services\frontend`),
+> one line at a time. Running them from your home folder picks up the wrong files.
 
 ### Backend setup
 
@@ -181,6 +184,15 @@ Then:
 pip install -r requirements.txt
 python seed.py
 uvicorn app.main:app --reload --port 8000
+```
+
+**Windows tip:** if activation is blocked or pip says *"Defaulting to user installation"*, skip activation and call
+the virtual environment's Python directly (this is what `start_backend.bat` does):
+
+```powershell
+.\venv\Scripts\python.exe -m pip install -r requirements.txt
+.\venv\Scripts\python.exe seed.py
+.\venv\Scripts\python.exe -m uvicorn app.main:app --reload --port 8000
 ```
 
 Optional: `copy .env.example .env` (Windows) or `cp .env.example .env` to change settings (rate limit, NEFT delay,
@@ -274,7 +286,7 @@ SOAP faults, malformed XML, SOAP 1.2 version mismatch, XXE protection, WSDL, **R
 function**, and a live-server interoperability test with the **zeep** SOAP client.
 
 ```
-58 passed in 5.1s   (Python 3.10, 3.11, 3.12 and 3.13)
+58 passed in 5.4s   (Python 3.10, 3.11, 3.12, 3.13 and 3.14)
 ```
 
 Frontend quality checks: `npm run lint` and `npm run build`. The full class demo workflow was also verified in a

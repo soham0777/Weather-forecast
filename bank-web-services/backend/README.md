@@ -8,6 +8,7 @@
 cd backend
 python -m venv venv
 venv\Scripts\activate            # Windows   (macOS/Linux: source venv/bin/activate)
+                                 # Windows alternative without activation: .\venv\Scripts\python.exe -m pip ...  (see main README)
 pip install -r requirements.txt
 python seed.py                   # create bank.db with fictional demo data (safe to re-run; --reset to restore)
 uvicorn app.main:app --reload --port 8000
