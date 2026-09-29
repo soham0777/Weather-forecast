@@ -17,7 +17,7 @@ import lombok.Setter;
 @Table(name = "evaluations",
         uniqueConstraints = @UniqueConstraint(name = "uk_evaluations_application_evaluator",
                 columnNames = {"application_id", "evaluator_id"}))
-public class Evaluation extends BaseEntity implements PerformanceRatings {
+public class Evaluation extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "application_id", nullable = false)

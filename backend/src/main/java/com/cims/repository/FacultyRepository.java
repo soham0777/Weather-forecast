@@ -1,5 +1,6 @@
 package com.cims.repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -35,6 +36,8 @@ public interface FacultyRepository extends JpaRepository<Faculty, Long> {
             """)
     Page<Faculty> search(@Param("q") String q, @Param("department") String department,
                          @Param("active") Boolean active, Pageable pageable);
+
+    List<Faculty> findByUserIdIn(Collection<Long> userIds);
 
     @Query("select f from Faculty f join f.user u where u.active = true order by f.name")
     List<Faculty> findAllActive();

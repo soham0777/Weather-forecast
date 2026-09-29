@@ -1,0 +1,30 @@
+# Automated tests run against an in-memory H2 database in MySQL mode, so no MySQL server
+# is required. Hibernate creates the tables from the entities for each test run.
+spring:
+  datasource:
+    url: jdbc:h2:mem:cims_test;MODE=MySQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1
+    username: sa
+    password: ""
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+
+app:
+  timezone: Asia/Kolkata
+  frontend-url: http://localhost:5173
+  cors:
+    allowed-origins: http://localhost:5173
+  jwt:
+    # Test-only value; real deployments must set JWT_SECRET.
+    secret: test-only-jwt-secret-value-0123456789-abcdefghij
+    expiration-minutes: 60
+  storage:
+    path: ${java.io.tmpdir}/cims-test-uploads
+  mail:
+    enabled: false
+    from: test@cims.local
+
+logging:
+  level:
+    com.cims: WARN

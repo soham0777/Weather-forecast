@@ -23,4 +23,6 @@ public interface InterviewRepository extends JpaRepository<Interview, Long>, Jpa
     boolean existsByApplicationIdAndStatus(Long applicationId, InterviewStatus status);
 
     long countByStatus(InterviewStatus status);
+
+    boolean existsByApplicationInternshipIdAndStatus(Long internshipId, InterviewStatus status);
 }

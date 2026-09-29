@@ -26,4 +26,9 @@ public record RegisterRequest(
         @DecimalMin(value = "0.0", message = "GPA must be between 0 and 10.")
         @DecimalMax(value = "10.0", message = "GPA must be between 0 and 10.")
         @Digits(integer = 2, fraction = 2, message = "GPA can have at most 2 decimal places.") BigDecimal gpa) {
+
+    /** Surrounding whitespace (e.g. from copy-paste) is removed before validation. */
+    public RegisterRequest {
+        email = email == null ? null : email.trim();
+    }
 }

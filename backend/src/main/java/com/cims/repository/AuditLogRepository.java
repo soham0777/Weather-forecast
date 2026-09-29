@@ -1,6 +1,7 @@
 package com.cims.repository;
 
 import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
 
 import org.springframework.data.domain.Page;
@@ -25,4 +26,7 @@ public interface AuditLogRepository extends JpaRepository<AuditLog, Long> {
     @EntityGraph(attributePaths = "user")
     @Query("select a from AuditLog a where (:action is null or a.action = :action)")
     Page<AuditLog> search(@Param("action") AuditAction action, Pageable pageable);
+
+    @EntityGraph(attributePaths = "user")
+    List<AuditLog> findByActionIn(Collection<AuditAction> actions, Pageable pageable);
 }

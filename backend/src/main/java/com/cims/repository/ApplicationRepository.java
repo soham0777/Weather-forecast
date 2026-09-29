@@ -25,6 +25,11 @@ public interface ApplicationRepository extends JpaRepository<Application, Long>,
 
     boolean existsByInternshipId(Long internshipId);
 
+    boolean existsByInternshipIdAndStatusIn(Long internshipId, Collection<ApplicationStatus> statuses);
+
+    @Query("select a.internship.id, count(a) from Application a where a.internship.id in :ids group by a.internship.id")
+    List<Object[]> countByInternshipIds(@Param("ids") Collection<Long> ids);
+
     long countByInternshipId(Long internshipId);
 
     long countByStatus(ApplicationStatus status);
