@@ -8,7 +8,8 @@ spring:
   application:
     name: cims-backend
   config:
-    import: optional:file:.env[.properties]
+    # Local settings file: backend/.env (works whether started from backend/ or the project root)
+    import: optional:file:.env[.properties],optional:file:backend/.env[.properties]
 
   datasource:
     url: ${DB_URL:jdbc:mysql://localhost:3306/cims?serverTimezone=UTC&useSSL=false&allowPublicKeyRetrieval=true}

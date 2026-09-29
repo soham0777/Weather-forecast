@@ -149,7 +149,11 @@ ER diagram in [`docs/PROJECT_DOCUMENTATION.md`](docs/PROJECT_DOCUMENTATION.md#13
 
 ## Installation
 
-Prerequisites: **Java 17+**, **Maven 3.9+**, **Node.js 20+** (22 recommended), **MySQL 8**.
+> **New to the project? Follow [`docs/RUN_IN_VSCODE.md`](docs/RUN_IN_VSCODE.md)** — a step-by-step
+> guide for running everything in VS Code on Windows (also covers Mac/Linux), with troubleshooting.
+
+Prerequisites: **Java 17+** (21 recommended), **Node.js 20+** (22 recommended), **MySQL 8**.
+Maven does not need to be installed — use the included Maven Wrapper (`mvnw` / `mvnw.cmd`).
 
 ```bash
 git clone https://github.com/<your-account>/<your-repo>.git
@@ -199,10 +203,12 @@ Frontend (`frontend/.env.local`, or the hosting dashboard):
 
 ```bash
 cd backend
-mvn spring-boot:run          # http://localhost:8080  (health: /api/health)
+./mvnw spring-boot:run       # Windows: .\mvnw.cmd spring-boot:run   → http://localhost:8080/api/health
 # or build a jar:
-mvn package && java -jar target/cims-backend.jar
+./mvnw package && java -jar target/cims-backend.jar
 ```
+
+In VS Code you can also use **Run and Debug → "CIMS Backend (Spring Boot)"** (`.vscode/launch.json`).
 
 On start-up Hibernate **validates** the tables against the entities (it never changes the schema).
 
@@ -229,7 +235,7 @@ The full endpoint reference (roles, parameters, rules, status codes) is in
 ## Testing
 
 ```bash
-cd backend && mvn test       # 76 unit + integration tests on an in-memory H2 database
+cd backend && ./mvnw test    # 76 unit + integration tests on an in-memory H2 database
 cd frontend && npm run lint && npm run build
 ```
 

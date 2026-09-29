@@ -1,0 +1,13 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "java",
+      "name": "CIMS Backend (Spring Boot)",
+      "request": "launch",
+      "mainClass": "com.cims.CimsApplication",
+      "projectName": "cims-backend",
+      "cwd": "${workspaceFolder}/backend"
+    }
+  ]
+}
