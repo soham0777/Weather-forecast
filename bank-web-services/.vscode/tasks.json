@@ -1,0 +1,37 @@
+{
+  // VS Code: Ctrl+Shift+P -> "Tasks: Run Task" -> "Start simulator (backend + frontend)"
+  // Open the bank-web-services folder itself in VS Code (File -> Open Folder) so these paths resolve.
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Backend - FastAPI on port 8000",
+      "type": "shell",
+      "command": "./start_backend.sh",
+      "windows": { "command": ".\\start_backend.bat" },
+      "problemMatcher": [],
+      "presentation": { "panel": "dedicated", "reveal": "always" }
+    },
+    {
+      "label": "Frontend - Vite on port 5173",
+      "type": "shell",
+      "command": "./start_frontend.sh",
+      "windows": { "command": ".\\start_frontend.bat" },
+      "problemMatcher": [],
+      "presentation": { "panel": "dedicated", "reveal": "always" }
+    },
+    {
+      "label": "Start simulator (backend + frontend)",
+      "dependsOn": ["Backend - FastAPI on port 8000", "Frontend - Vite on port 5173"],
+      "dependsOrder": "parallel",
+      "problemMatcher": []
+    },
+    {
+      "label": "Run backend tests (pytest)",
+      "type": "shell",
+      "command": "venv/bin/python -m pytest",
+      "windows": { "command": ".\\venv\\Scripts\\python.exe -m pytest" },
+      "options": { "cwd": "${workspaceFolder}/backend" },
+      "problemMatcher": []
+    }
+  ]
+}
