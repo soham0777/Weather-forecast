@@ -1,0 +1,43 @@
+package com.cims.entity.enums;
+
+/**
+ * Actions recorded in audit_logs. The *_FAILED / *_DENIED / *_REJECTED / *_ATTEMPT actions
+ * feed the compliance report ("policy violations").
+ */
+public enum AuditAction {
+    // Authentication
+    LOGIN_SUCCESS,
+    LOGIN_FAILED,
+    LOGOUT,
+    USER_REGISTERED,
+    EMAIL_VERIFIED,
+    PASSWORD_CHANGED,
+
+    // Administration
+    USER_CREATED,
+    USER_ACTIVATED,
+    USER_DEACTIVATED,
+    USER_VERIFIED_BY_ADMIN,
+    PROFILE_UPDATED,
+    COMPANY_CREATED,
+    COMPANY_UPDATED,
+    COMPANY_ARCHIVED,
+    COMPANY_RESTORED,
+    INTERNSHIP_CREATED,
+    INTERNSHIP_UPDATED,
+    INTERNSHIP_STATUS_CHANGED,
+    INTERNSHIP_DELETED,
+    INTERVIEW_SCHEDULED,
+    INTERVIEW_UPDATED,
+    INTERVIEW_CANCELLED,
+    INTERVIEW_COMPLETED,
+    EVALUATION_SAVED,
+    EVALUATION_ARCHIVED,
+    APPLICATION_COMPLETED,
+    SYSTEM_FEEDBACK_UPDATED,
+
+    // Policy violations
+    ACCESS_DENIED,
+    INVALID_FILE_UPLOAD,
+    DUPLICATE_APPLICATION_ATTEMPT
+}

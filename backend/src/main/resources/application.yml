@@ -1,0 +1,87 @@
+# =====================================================================
+# CIMS backend configuration.
+# Every environment-specific value is read from an environment variable.
+# For local development you may put KEY=value lines in backend/.env
+# (git-ignored); see backend/.env.example.
+# =====================================================================
+spring:
+  application:
+    name: cims-backend
+  config:
+    import: optional:file:.env[.properties]
+
+  datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3306/cims?serverTimezone=UTC&useSSL=false&allowPublicKeyRetrieval=true}
+    username: ${DB_USERNAME:cims_app}
+    password: ${DB_PASSWORD:}
+    hikari:
+      maximum-pool-size: ${DB_POOL_SIZE:10}
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      # The schema is created by database/schema.sql; Hibernate only verifies it.
+      ddl-auto: ${DB_DDL_AUTO:validate}
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+
+  jackson:
+    time-zone: UTC
+    deserialization:
+      # Reject 3.5 for integer fields such as ratings instead of silently truncating.
+      accept-float-as-int: false
+      fail-on-unknown-properties: false
+
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 6MB
+
+  mail:
+    host: ${MAIL_HOST:localhost}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: ${MAIL_SMTP_AUTH:true}
+          starttls:
+            enable: ${MAIL_STARTTLS:true}
+
+server:
+  port: ${PORT:8080}
+  # Honour X-Forwarded-* headers from the hosting platform's HTTPS proxy.
+  forward-headers-strategy: framework
+  error:
+    include-stacktrace: never
+    include-message: never
+  tomcat:
+    max-swallow-size: 10MB
+
+app:
+  # College time zone used for deadlines and interview scheduling rules.
+  timezone: ${APP_TIMEZONE:Asia/Kolkata}
+  # Public URL of the React app (used in e-mail verification links).
+  frontend-url: ${FRONTEND_URL:http://localhost:5173}
+  cors:
+    # Comma-separated list of allowed browser origins.
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
+  jwt:
+    # REQUIRED: at least 32 characters. Generate with: openssl rand -base64 48
+    secret: ${JWT_SECRET:}
+    expiration-minutes: ${JWT_EXPIRATION_MINUTES:480}
+  storage:
+    # Directory where uploaded resumes are stored (use a persistent volume in production).
+    path: ${FILE_STORAGE_PATH:./uploads}
+  mail:
+    # When false, verification links are written to the application log instead of e-mailed.
+    enabled: ${MAIL_ENABLED:false}
+    from: ${MAIL_FROM:no-reply@cims.local}
+
+logging:
+  level:
+    root: INFO
+    com.cims: INFO
