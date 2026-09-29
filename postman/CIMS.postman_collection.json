@@ -1,0 +1,2708 @@
+{
+  "info": {
+    "name": "CIMS - College Internship Management System API",
+    "description": "End-to-end API checks for CIMS. Prerequisites: backend running with database/schema.sql + database/seed.sql loaded and database/seed-files/sample-resume.pdf copied to <FILE_STORAGE_PATH>/seed/. Select the 'CIMS - local' environment (or set baseUrl) and run the folders in order: the Auth folder stores the tokens used by the other folders. The run creates data, so reload seed.sql on a fresh database before running it again from the start.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Dates relative to today (yyyy-MM-dd) used by internship and interview requests.",
+          "const day = (n) => { const d = new Date(); d.setDate(d.getDate() + n); const p = (x) => String(x).padStart(2, '0'); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`; };",
+          "[0, 5, 6, 15, 16, 30, 114].forEach((n) => pm.collectionVariables.set(`day${n}`, day(n)));",
+          "if (!pm.collectionVariables.get('runId')) { pm.collectionVariables.set('runId', String(Date.now())); }"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080/api"
+    },
+    {
+      "key": "adminToken",
+      "value": ""
+    },
+    {
+      "key": "facultyToken",
+      "value": ""
+    },
+    {
+      "key": "otherFacultyToken",
+      "value": ""
+    },
+    {
+      "key": "studentToken",
+      "value": ""
+    },
+    {
+      "key": "newStudentToken",
+      "value": ""
+    },
+    {
+      "key": "newStudentEmail",
+      "value": ""
+    },
+    {
+      "key": "companyId",
+      "value": ""
+    },
+    {
+      "key": "companyCin",
+      "value": ""
+    },
+    {
+      "key": "internshipId",
+      "value": ""
+    },
+    {
+      "key": "applicationId",
+      "value": ""
+    },
+    {
+      "key": "interviewId",
+      "value": ""
+    },
+    {
+      "key": "evaluationId",
+      "value": ""
+    },
+    {
+      "key": "systemFeedbackId",
+      "value": ""
+    },
+    {
+      "key": "runId",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Auth",
+      "item": [
+        {
+          "name": "Login as admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "  const body = pm.response.json();",
+                  "  pm.test('Role is ADMIN', () => pm.expect(body.data.user.role).to.eql('ADMIN'));",
+                  "  pm.test('Password hash never returned', () => pm.expect(JSON.stringify(body)).to.not.include('passwordHash'));",
+                  "  pm.collectionVariables.set('adminToken', body.data.token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"admin@cims.test\", \"password\": \"Admin@123\"}"
+            },
+            "url": "{{baseUrl}}/auth/login"
+          }
+        },
+        {
+          "name": "Login as faculty (Dr. Priya Sharma)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "  pm.collectionVariables.set('facultyToken', pm.response.json().data.token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"priya.sharma@cims.test\", \"password\": \"Faculty@123\"}"
+            },
+            "url": "{{baseUrl}}/auth/login"
+          }
+        },
+        {
+          "name": "Login as another faculty (Prof. Rahul Deshmukh)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "  pm.collectionVariables.set('otherFacultyToken', pm.response.json().data.token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"rahul.deshmukh@cims.test\", \"password\": \"Faculty@123\"}"
+            },
+            "url": "{{baseUrl}}/auth/login"
+          }
+        },
+        {
+          "name": "Login as student (Aarav Patil)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "  pm.collectionVariables.set('studentToken', pm.response.json().data.token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"aarav.patil@students.cims.test\", \"password\": \"Student@123\"}"
+            },
+            "url": "{{baseUrl}}/auth/login"
+          }
+        },
+        {
+          "name": "Login with wrong password → 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  pm.test('401 Unauthorized', () => pm.response.to.have.status(401));",
+                  "  pm.test('Standard error body', () => { const b = pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.status).to.eql(401); });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"admin@cims.test\", \"password\": \"Wrong@123\"}"
+            },
+            "url": "{{baseUrl}}/auth/login"
+          }
+        },
+        {
+          "name": "Register student",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  pm.collectionVariables.set('newStudentEmail', `bhakti.${Date.now()}@students.cims.test`);",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  pm.test('201 Created', () => pm.response.to.have.status(201));",
+                  "  const body = pm.response.json();",
+                  "  pm.test('Student, not yet verified', () => { pm.expect(body.data.user.role).to.eql('STUDENT'); pm.expect(body.data.user.verified).to.eql(false); });",
+                  "  pm.collectionVariables.set('newStudentToken', body.data.token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"{{newStudentEmail}}\", \"password\": \"Bhakti@123\", \"name\": \"Bhakti Kulkarni\", \"phone\": \"9876543210\", \"department\": \"Computer Engineering\", \"gpa\": 8.9}"
+            },
+            "url": "{{baseUrl}}/auth/register"
+          }
+        },
+        {
+          "name": "Register duplicate e-mail → 409",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  pm.test('409 Conflict', () => pm.response.to.have.status(409));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"{{newStudentEmail}}\", \"password\": \"Bhakti@123\", \"name\": \"Bhakti Kulkarni\", \"phone\": \"9876543210\", \"department\": \"Computer Engineering\", \"gpa\": 8.9}"
+            },
+            "url": "{{baseUrl}}/auth/register"
+          }
+        },
+        {
+          "name": "Register with weak password and invalid e-mail → 422",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  pm.test('422 Unprocessable Entity', () => pm.response.to.have.status(422));",
+                  "  pm.test('Field errors returned', () => { const e = pm.response.json().errors; pm.expect(e).to.have.property('password'); pm.expect(e).to.have.property('email'); });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"not-an-email\", \"password\": \"bhakti123\", \"name\": \"B\", \"phone\": \"12\", \"department\": \"\", \"gpa\": 11}"
+            },
+            "url": "{{baseUrl}}/auth/register"
+          }
+        },
+        {
+          "name": "Current user",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{studentToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/me"
+          }
+        },
+        {
+          "name": "Current user without token → 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  pm.test('401 Unauthorized', () => pm.response.to.have.status(401));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/auth/me"
+          }
+        },
+        {
+          "name": "Current user with invalid JWT → 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  pm.test('401 Unauthorized', () => pm.response.to.have.status(401));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIn0.invalid-signature"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/me"
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Students",
+      "item": [
+        {
+          "name": "My profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "  pm.test('Has application statistics', () => pm.expect(pm.response.json().data).to.have.property('applicationStats'));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{studentToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/students/me"
+          }
+        },
+        {
+          "name": "Update my profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{studentToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"name\": \"Aarav Patil\", \"phone\": \"9876500001\", \"department\": \"Computer Engineering\", \"gpa\": 8.75}"
+            },
+            "url": "{{baseUrl}}/students/me"
+          }
+        },
+        {
+          "name": "Update profile with GPA 11 → 422",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  pm.test('422', () => pm.response.to.have.status(422));",
+                  "  pm.test('gpa error', () => pm.expect(pm.response.json().errors).to.have.property('gpa'));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{studentToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"name\": \"Aarav Patil\", \"phone\": \"9876500001\", \"department\": \"Computer Engineering\", \"gpa\": 11}"
+            },
+            "url": "{{baseUrl}}/students/me"
+          }
+        },
+        {
+          "name": "Upload resume (select database/seed-files/sample-resume.pdf)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  pm.test('200 OK (choose the PDF in the Body tab first)', () => pm.response.to.have.status(200));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{newStudentToken}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "database/seed-files/sample-resume.pdf"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/students/me/resume",
+            "description": "Postman needs the file path: in the Body tab choose database/seed-files/sample-resume.pdf from this repository. Try a .docx (400) or a file over 5 MB (413) as negative tests."
+          }
+        },
+        {
+          "name": "Admin: list students (search + pagination)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "  pm.test('Paged response', () => pm.expect(pm.response.json().data).to.have.property('totalElements'));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/students?q=patil&page=0&size=5"
+          }
+        },
+        {
+          "name": "Student lists students → 403",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  pm.test('403 Forbidden', () => pm.response.to.have.status(403));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{studentToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/students"
+          }
+        },
+        {
+          "name": "Admin: create student",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  pm.test('201 Created', () => pm.response.to.have.status(201));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"created.{{runId}}@students.cims.test\", \"password\": \"Initial@123\", \"name\": \"Created Student\", \"phone\": \"9876501234\", \"department\": \"Civil Engineering\", \"gpa\": 7.5}"
+            },
+            "url": "{{baseUrl}}/students"
+          }
+        },
+        {
+          "name": "Admin: get student record",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/students/1"
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Faculty",
+      "item": [
+        {
+          "name": "Admin: list faculty",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/faculty"
+          }
+        },
+        {
+          "name": "Faculty: my profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{facultyToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/faculty/me"
+          }
+        },
+        {
+          "name": "Admin: create faculty",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  pm.test('201 Created', () => pm.response.to.have.status(201));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"faculty.{{runId}}@cims.test\", \"password\": \"Faculty@123\", \"name\": \"Dr. New Faculty\", \"department\": \"Information Technology\", \"designation\": \"Assistant Professor\", \"phone\": \"9822009999\"}"
+            },
+            "url": "{{baseUrl}}/faculty"
+          }
+        },
+        {
+          "name": "Student lists faculty → 403",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  pm.test('403 Forbidden', () => pm.response.to.have.status(403));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{studentToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/faculty"
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Companies",
+      "item": [
+        {
+          "name": "List companies (student view)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "  pm.test('Contact details hidden from students', () => pm.expect(pm.response.json().data.content[0].contactEmail).to.eql(null));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{studentToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/companies"
+          }
+        },
+        {
+          "name": "Admin: create company",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  pm.collectionVariables.set('companyCin', 'U72200MH2020PTC' + String(Math.floor(Math.random() * 1000000)).padStart(6, '0'));",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  pm.test('201 Created', () => pm.response.to.have.status(201));",
+                  "  pm.collectionVariables.set('companyId', pm.response.json().data.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"name\": \"Postman Test Pvt Ltd\", \"registrationNumber\": \"{{companyCin}}\", \"location\": \"Nashik\", \"contactPerson\": \"Ms. HR\", \"contactEmail\": \"hr@postman-test.example\", \"contactPhone\": \"9876543210\"}"
+            },
+            "url": "{{baseUrl}}/companies"
+          }
+        },
+        {
+          "name": "Duplicate registration number → 409",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  pm.test('409 Conflict', () => pm.response.to.have.status(409));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"name\": \"Another Company\", \"registrationNumber\": \"{{companyCin}}\", \"location\": \"Pune\", \"contactPerson\": \"HR\", \"contactEmail\": \"hr@another.example\", \"contactPhone\": \"9876543210\"}"
+            },
+            "url": "{{baseUrl}}/companies"
+          }
+        },
+        {
+          "name": "Invalid registration number → 422",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  pm.test('422', () => pm.response.to.have.status(422));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"name\": \"Bad Company\", \"registrationNumber\": \"12345\", \"location\": \"Pune\", \"contactPerson\": \"HR\", \"contactEmail\": \"hr@bad.example\", \"contactPhone\": \"9876543210\"}"
+            },
+            "url": "{{baseUrl}}/companies"
+          }
+        },
+        {
+          "name": "Admin: update company",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"name\": \"Postman Test Pvt Ltd\", \"registrationNumber\": \"{{companyCin}}\", \"location\": \"Pune\", \"contactPerson\": \"Ms. HR Lead\", \"contactEmail\": \"hr@postman-test.example\", \"contactPhone\": \"9876543210\"}"
+            },
+            "url": "{{baseUrl}}/companies/{{companyId}}"
+          }
+        },
+        {
+          "name": "Company details with ratings",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "  pm.test('Has ratings', () => pm.expect(pm.response.json().data).to.have.property('ratings'));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/companies/1"
+          }
+        },
+        {
+          "name": "Faculty creates company → 403",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  pm.test('403 Forbidden', () => pm.response.to.have.status(403));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{facultyToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"name\": \"X\"}"
+            },
+            "url": "{{baseUrl}}/companies"
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Internships",
+      "item": [
+        {
+          "name": "Browse internships (student)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "  pm.test('Only APPROVED/OPEN visible', () => pm.response.json().data.content.forEach((i) => pm.expect(['APPROVED', 'OPEN']).to.include(i.status)));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{studentToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/internships?sort=deadline,asc&page=0&size=10"
+          }
+        },
+        {
+          "name": "Search + filters",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "  pm.test('All results match the domain', () => pm.response.json().data.content.forEach((i) => pm.expect(i.domain).to.eql('Web Development')));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{studentToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/internships?q=developer&domain=Web%20Development&location=Pune&minStipend=5000&maxStipend=20000"
+          }
+        },
+        {
+          "name": "Filter options",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{studentToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/internships/filters"
+          }
+        },
+        {
+          "name": "Faculty: create internship with end before start → 422",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  pm.test('422', () => pm.response.to.have.status(422));",
+                  "  pm.test('endDate error', () => pm.expect(pm.response.json().errors).to.have.property('endDate'));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{facultyToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"title\": \"Invalid Dates Intern\", \"description\": \"This internship has invalid dates for testing.\", \"domain\": \"Web Development\", \"companyId\": 1, \"stipend\": 5000, \"applicationDeadline\": \"{{day15}}\", \"startDate\": \"{{day30}}\", \"endDate\": \"{{day16}}\"}"
+            },
+            "url": "{{baseUrl}}/internships"
+          }
+        },
+        {
+          "name": "Faculty: create internship (PENDING)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  pm.test('201 Created', () => pm.response.to.have.status(201));",
+                  "  const result = pm.response.json().data;",
+                  "  pm.test('Status PENDING, duration derived (12 weeks)', () => { pm.expect(result.status).to.eql('PENDING'); pm.expect(result.durationWeeks).to.eql(12); });",
+                  "  pm.collectionVariables.set('internshipId', result.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{facultyToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"title\": \"API Test Developer Intern\", \"description\": \"Build and test REST APIs with Spring Boot and MySQL.\", \"domain\": \"Web Development\", \"companyId\": {{companyId}}, \"stipend\": 12000, \"applicationDeadline\": \"{{day15}}\", \"startDate\": \"{{day30}}\", \"endDate\": \"{{day114}}\"}"
+            },
+            "url": "{{baseUrl}}/internships"
+          }
+        },
+        {
+          "name": "Student cannot see PENDING internship → 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  pm.test('404 Not Found', () => pm.response.to.have.status(404));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{studentToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/internships/{{internshipId}}"
+          }
+        },
+        {
+          "name": "Faculty cannot approve → 403",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  pm.test('403 Forbidden', () => pm.response.to.have.status(403));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{facultyToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"status\": \"APPROVED\"}"
+            },
+            "url": "{{baseUrl}}/internships/{{internshipId}}/status"
+          }
+        },
+        {
+          "name": "Admin reject without remarks → 422",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  pm.test('422', () => pm.response.to.have.status(422));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"status\": \"REJECTED\"}"
+            },
+            "url": "{{baseUrl}}/internships/{{internshipId}}/status"
+          }
+        },
+        {
+          "name": "Admin approves",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "  pm.test('APPROVED', () => pm.expect(pm.response.json().data.status).to.eql('APPROVED'));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"status\": \"APPROVED\", \"remarks\": \"Approved via API test\"}"
+            },
+            "url": "{{baseUrl}}/internships/{{internshipId}}/status"
+          }
+        },
+        {
+          "name": "Faculty opens applications",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "  pm.test('OPEN and accepting', () => { const d = pm.response.json().data; pm.expect(d.status).to.eql('OPEN'); pm.expect(d.acceptingApplications).to.eql(true); });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{facultyToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"status\": \"OPEN\"}"
+            },
+            "url": "{{baseUrl}}/internships/{{internshipId}}/status"
+          }
+        },
+        {
+          "name": "Other faculty cannot edit → 403",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  pm.test('403 Forbidden', () => pm.response.to.have.status(403));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{otherFacultyToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"status\": \"CLOSED\"}"
+            },
+            "url": "{{baseUrl}}/internships/{{internshipId}}/status"
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Applications",
+      "item": [
+        {
+          "name": "Student applies",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  pm.test('201 Created', () => pm.response.to.have.status(201));",
+                  "  const result = pm.response.json().data;",
+                  "  pm.test('PENDING with timeline', () => { pm.expect(result.application.status).to.eql('PENDING'); pm.expect(result.timeline[0].title).to.eql('Applied'); });",
+                  "  pm.collectionVariables.set('applicationId', result.application.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{studentToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"internshipId\": {{internshipId}}, \"coverLetter\": \"I have built several REST APIs with Spring Boot and would like to grow as a backend developer.\", \"qualifications\": \"Java, Spring Boot, MySQL\"}"
+            },
+            "url": "{{baseUrl}}/applications"
+          }
+        },
+        {
+          "name": "Duplicate application → 409",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  pm.test('409 Conflict', () => pm.response.to.have.status(409));",
+                  "  pm.test('Clear message', () => pm.expect(pm.response.json().message).to.eql('You have already applied for this internship.'));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{studentToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"internshipId\": {{internshipId}}, \"coverLetter\": \"I have built several REST APIs with Spring Boot and would like to grow as a backend developer.\"}"
+            },
+            "url": "{{baseUrl}}/applications"
+          }
+        },
+        {
+          "name": "Apply to nonexistent internship → 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  pm.test('404 Not Found', () => pm.response.to.have.status(404));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{studentToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"internshipId\": 999999, \"coverLetter\": \"I have built several REST APIs with Spring Boot and would like to grow as a backend developer.\"}"
+            },
+            "url": "{{baseUrl}}/applications"
+          }
+        },
+        {
+          "name": "My applications",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{studentToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/applications?status=PENDING"
+          }
+        },
+        {
+          "name": "Faculty opens application (Under review)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "  pm.test('Reviewer actions offered', () => pm.expect(pm.response.json().data.actions.allowedStatusChanges).to.include('SHORTLISTED'));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{facultyToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/applications/{{applicationId}}"
+          }
+        },
+        {
+          "name": "Other faculty cannot view → 403",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  pm.test('403 Forbidden', () => pm.response.to.have.status(403));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{otherFacultyToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/applications/{{applicationId}}"
+          }
+        },
+        {
+          "name": "Invalid transition PENDING → ACCEPTED → 409",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  pm.test('409 Conflict', () => pm.response.to.have.status(409));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{facultyToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"status\": \"ACCEPTED\"}"
+            },
+            "url": "{{baseUrl}}/applications/{{applicationId}}/status"
+          }
+        },
+        {
+          "name": "Faculty shortlists",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "  pm.test('SHORTLISTED', () => pm.expect(pm.response.json().data.application.status).to.eql('SHORTLISTED'));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{facultyToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"status\": \"SHORTLISTED\", \"comment\": \"Shortlisted for technical interview\"}"
+            },
+            "url": "{{baseUrl}}/applications/{{applicationId}}/status"
+          }
+        }
+      ]
+    },
+    {
+      "name": "7. Interviews",
+      "item": [
+        {
+          "name": "Schedule with less than 24 h notice → 422",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  pm.test('422', () => pm.response.to.have.status(422));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{facultyToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"applicationId\": {{applicationId}}, \"interviewDate\": \"{{day0}}\", \"interviewTime\": \"23:59\", \"interviewerName\": \"Mr. Interviewer\"}"
+            },
+            "url": "{{baseUrl}}/interviews"
+          }
+        },
+        {
+          "name": "Schedule after the application deadline → 422",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  pm.test('422', () => pm.response.to.have.status(422));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{facultyToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"applicationId\": {{applicationId}}, \"interviewDate\": \"{{day16}}\", \"interviewTime\": \"10:00\", \"interviewerName\": \"Mr. Interviewer\"}"
+            },
+            "url": "{{baseUrl}}/interviews"
+          }
+        },
+        {
+          "name": "Schedule interview",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  pm.test('201 Created', () => pm.response.to.have.status(201));",
+                  "  pm.collectionVariables.set('interviewId', pm.response.json().data.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{facultyToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"applicationId\": {{applicationId}}, \"interviewDate\": \"{{day5}}\", \"interviewTime\": \"11:00\", \"interviewerName\": \"Mr. Sandeep Rao\", \"interviewerDetails\": \"Pune office, 3rd floor\"}"
+            },
+            "url": "{{baseUrl}}/interviews"
+          }
+        },
+        {
+          "name": "Reschedule",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{facultyToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"interviewDate\": \"{{day6}}\", \"interviewTime\": \"15:30\", \"interviewerName\": \"Mr. Sandeep Rao\", \"interviewerDetails\": \"Online\", \"comments\": \"Moved at the company's request\"}"
+            },
+            "url": "{{baseUrl}}/interviews/{{interviewId}}"
+          }
+        },
+        {
+          "name": "Record result before the interview → 422",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  pm.test('422', () => pm.response.to.have.status(422));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{facultyToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"result\": \"SELECTED\"}"
+            },
+            "url": "{{baseUrl}}/interviews/{{interviewId}}/result"
+          }
+        },
+        {
+          "name": "Student sees upcoming interviews",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{studentToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/interviews?scope=upcoming"
+          }
+        },
+        {
+          "name": "Cancel interview",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "  pm.test('CANCELLED', () => pm.expect(pm.response.json().data.status).to.eql('CANCELLED'));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{facultyToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/interviews/{{interviewId}}?reason=Rescheduling%20next%20week"
+          }
+        }
+      ]
+    },
+    {
+      "name": "8. Evaluations (seeded accepted application #7)",
+      "item": [
+        {
+          "name": "Rating 0 → 422",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  pm.test('422', () => pm.response.to.have.status(422));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"applicationId\": 7, \"technicalSkills\": 0, \"softSkills\": 4, \"punctuality\": 4, \"responsibility\": 4, \"teamwork\": 4, \"learningAbility\": 4, \"overallRating\": 4}"
+            },
+            "url": "{{baseUrl}}/evaluations"
+          }
+        },
+        {
+          "name": "Rating 6 → 422",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  pm.test('422', () => pm.response.to.have.status(422));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"applicationId\": 7, \"technicalSkills\": 6, \"softSkills\": 4, \"punctuality\": 4, \"responsibility\": 4, \"teamwork\": 4, \"learningAbility\": 4, \"overallRating\": 4}"
+            },
+            "url": "{{baseUrl}}/evaluations"
+          }
+        },
+        {
+          "name": "Decimal rating 3.5 → 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  pm.test('400', () => pm.response.to.have.status(400));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"applicationId\": 7, \"technicalSkills\": 3.5, \"softSkills\": 4, \"punctuality\": 4, \"responsibility\": 4, \"teamwork\": 4, \"learningAbility\": 4, \"overallRating\": 4}"
+            },
+            "url": "{{baseUrl}}/evaluations"
+          }
+        },
+        {
+          "name": "Missing overall rating → 422",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  pm.test('422', () => pm.response.to.have.status(422));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"applicationId\": 7, \"technicalSkills\": 4, \"softSkills\": 4, \"punctuality\": 4, \"responsibility\": 4, \"teamwork\": 4, \"learningAbility\": 4}"
+            },
+            "url": "{{baseUrl}}/evaluations"
+          }
+        },
+        {
+          "name": "Valid evaluation (ratings 1 and 5)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  pm.test('201 Created', () => pm.response.to.have.status(201));",
+                  "  pm.collectionVariables.set('evaluationId', pm.response.json().data.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"applicationId\": 7, \"technicalSkills\": 5, \"softSkills\": 1, \"punctuality\": 5, \"responsibility\": 4, \"teamwork\": 5, \"learningAbility\": 4, \"overallRating\": 5, \"comments\": \"Admin evaluation via API test\"}"
+            },
+            "url": "{{baseUrl}}/evaluations"
+          }
+        },
+        {
+          "name": "Duplicate evaluation by same evaluator → 409",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  pm.test('409 Conflict', () => pm.response.to.have.status(409));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"applicationId\": 7, \"technicalSkills\": 5, \"softSkills\": 5, \"punctuality\": 5, \"responsibility\": 5, \"teamwork\": 5, \"learningAbility\": 5, \"overallRating\": 5}"
+            },
+            "url": "{{baseUrl}}/evaluations"
+          }
+        },
+        {
+          "name": "Faculty lists evaluations",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{facultyToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/evaluations"
+          }
+        },
+        {
+          "name": "Archive evaluation",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/evaluations/{{evaluationId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "9. Feedback",
+      "item": [
+        {
+          "name": "Student feedback already given for application #1 → 409",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  pm.test('409 Conflict', () => pm.response.to.have.status(409));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{studentToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"applicationId\": 1, \"companyCulture\": 5, \"mentorshipQuality\": 5, \"technicalLearning\": 5, \"workEnvironment\": 5, \"overallExperience\": 5}"
+            },
+            "url": "{{baseUrl}}/feedback/student"
+          }
+        },
+        {
+          "name": "List student feedback (admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/feedback/student"
+          }
+        },
+        {
+          "name": "Company feedback about me (student)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{studentToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/feedback/company"
+          }
+        },
+        {
+          "name": "Faculty feedback list (student) → 403",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  pm.test('403 Forbidden', () => pm.response.to.have.status(403));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{studentToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/feedback/faculty"
+          }
+        },
+        {
+          "name": "Submit platform feedback (student)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  pm.test('201 Created', () => pm.response.to.have.status(201));",
+                  "  pm.collectionVariables.set('systemFeedbackId', pm.response.json().data.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{studentToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"feedbackType\": \"FEATURE_SUGGESTION\", \"title\": \"Calendar export for interviews\", \"description\": \"Please allow adding interviews to my phone calendar.\"}"
+            },
+            "url": "{{baseUrl}}/feedback/system"
+          }
+        },
+        {
+          "name": "Student cannot change feedback status → 403",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  pm.test('403 Forbidden', () => pm.response.to.have.status(403));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{studentToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"status\": \"RESOLVED\"}"
+            },
+            "url": "{{baseUrl}}/feedback/system/{{systemFeedbackId}}/status"
+          }
+        },
+        {
+          "name": "Admin updates feedback status",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "  pm.test('UNDER_REVIEW', () => pm.expect(pm.response.json().data.status).to.eql('UNDER_REVIEW'));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"status\": \"UNDER_REVIEW\", \"adminResponse\": \"Thanks, we are reviewing this.\"}"
+            },
+            "url": "{{baseUrl}}/feedback/system/{{systemFeedbackId}}/status"
+          }
+        }
+      ]
+    },
+    {
+      "name": "10. Reports & dashboards",
+      "item": [
+        {
+          "name": "Admin report",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "  pm.test('All sections present', () => { const d = pm.response.json().data; ['placement', 'applications', 'studentPerformance', 'companies', 'systemActivity', 'compliance'].forEach((k) => pm.expect(d).to.have.property(k)); });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/reports/admin"
+          }
+        },
+        {
+          "name": "Admin report as student → 403",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  pm.test('403 Forbidden', () => pm.response.to.have.status(403));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{studentToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/reports/admin"
+          }
+        },
+        {
+          "name": "Faculty report",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{facultyToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/reports/faculty"
+          }
+        },
+        {
+          "name": "Student report",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "  pm.test('Placement status present', () => pm.expect(['PLACED', 'NOT_PLACED']).to.include(pm.response.json().data.placement.status));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{studentToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/reports/student"
+          }
+        },
+        {
+          "name": "Admin dashboard",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/dashboard/admin"
+          }
+        },
+        {
+          "name": "Faculty dashboard",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{facultyToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/dashboard/faculty"
+          }
+        },
+        {
+          "name": "Student dashboard",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{studentToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/dashboard/student"
+          }
+        }
+      ]
+    },
+    {
+      "name": "11. Security checks",
+      "item": [
+        {
+          "name": "SQL injection attempt in search is treated as text",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "  pm.test('No rows returned', () => pm.expect(pm.response.json().data.totalElements).to.eql(0));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/internships?q=%27%20OR%20%271%27%3D%271"
+          }
+        },
+        {
+          "name": "Invalid ID type → 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  pm.test('400', () => pm.response.to.have.status(400));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/internships/abc"
+          }
+        },
+        {
+          "name": "Unknown ID → 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  pm.test('404', () => pm.response.to.have.status(404));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/internships/999999"
+          }
+        },
+        {
+          "name": "Student calls audit log → 403",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  pm.test('403 Forbidden', () => pm.response.to.have.status(403));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{studentToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/audit-logs"
+          }
+        },
+        {
+          "name": "Admin audit log shows policy violations",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "  pm.test('Access-denied attempts were recorded', () => pm.expect(pm.response.json().data.totalElements).to.be.above(0));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/audit-logs?action=ACCESS_DENIED"
+          }
+        },
+        {
+          "name": "Health check (public)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/health"
+          }
+        }
+      ]
+    }
+  ]
+}

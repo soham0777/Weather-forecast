@@ -80,6 +80,10 @@ app:
     # When false, verification links are written to the application log instead of e-mailed.
     enabled: ${MAIL_ENABLED:false}
     from: ${MAIL_FROM:no-reply@cims.local}
+  bootstrap-admin:
+    # Optional: creates the first administrator on an empty production database.
+    email: ${BOOTSTRAP_ADMIN_EMAIL:}
+    password: ${BOOTSTRAP_ADMIN_PASSWORD:}
 
 logging:
   level:
